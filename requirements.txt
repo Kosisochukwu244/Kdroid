@@ -1,0 +1,7 @@
+cyberwave
+opencv-python
+opencv-contrib-python
+numpy
+requests
+paho-mqtt
+python-dotenv
