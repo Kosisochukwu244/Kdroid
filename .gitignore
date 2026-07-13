@@ -13,3 +13,4 @@ venv/
 .idea/
 *.osa
 *.log
+!img_assets/**

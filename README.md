@@ -1,5 +1,10 @@
 # Kdroid
-![Kdroid's UGV Beast](img_assets/image.png)
+<table>
+  <tr>
+    <td><img src="img_assets/UGV Beast PI4B-2.png" width="400"></td>
+    <td><img src="img_assets/image.png" width="400"></td>
+  </tr>
+</table>
 Autonomous plant-scouting on a Waveshare UGV Beast, built on the Cyberwave SDK.
 
 Kdroid drives a tracked field robot between marked crop positions, captures an
