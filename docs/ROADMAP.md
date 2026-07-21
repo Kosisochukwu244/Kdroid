@@ -4,34 +4,59 @@ Built in phases so there's always a working demo, even if later phases slip.
 Each phase should end with something you can show, not just code that
 compiles.
 
-## Phase 0 — Bring-up (first 1–2 days)
+## Phase 0 — Bring-up ✅ mostly done
 
 Goal: prove the Beast talks to Cyberwave at all.
 
-- [ ] Install `cyberwave` SDK on the Pi, run `cyberwave --help`
-- [ ] `cyberwave pair` the Beast, confirm it shows up as a twin in the
-      Cyberwave dashboard
-- [ ] Move the robot forward/turn from a Python one-liner using the SDK
-- [ ] Start the camera twin, confirm you can view the stream live
-- [ ] Test the same movement code against `cw.affect("simulation")` in the
-      Playground, confirm parity with live
+- [x] Stop the default `ugv_rpi/app.py` program (was holding the camera +
+      serial port) — killed process + disabled its `@reboot` cron entry
+- [x] `pip install cyberwave` in a venv (`pip install --break-system-packages`
+      or a venv is required on Bookworm — system Python is externally managed)
+- [x] Install the Cyberwave CLI separately (`curl ... | bash`) — this is a
+      DIFFERENT tool from the pip package, only the CLI has `pair`/`login`
+- [x] `cyberwave login` + `sudo cyberwave pair` — installs
+      `cyberwave-edge-core` as a systemd service, auto-detects the USB
+      camera, links to your `ugv-live` twin
+- [x] Move the robot live from a Python script — confirmed working:
+      `cw.twin(asset_id, twin_id=..., environment_id=...)`, then
+      `beast.move_forward(...)` etc.
+- [ ] Camera **live streaming to the dashboard** specifically — blocked on
+      access to a private `cyberwave-edge-python` repo (separate service
+      from edge-core). Not required for the core pipeline — see Phase 1.
 
-**Exit criteria:** you can drive the Beast and see its camera feed through
-Cyberwave, from your own script, in both sim and live.
+**Exit criteria met** for movement + basic SDK connectivity. Streaming to
+the dashboard UI is a nice-to-have for demos, not a blocker — frame
+*capture* for the VLM pipeline uses `source="local"`, which reads the USB
+camera directly via OpenCV and doesn't depend on the blocked service at all.
 
-## Phase 1 — Manual scouting loop (days 3–5)
+## Phase 1 — Manual single-shot capture (pepper) — START HERE NOW
 
-Goal: prove the perception pipeline before automating movement.
+Goal: prove the full perception pipeline on ONE frame, no automation, no
+waypoints, no route — before building anything else.
 
-- [ ] Manually position the robot at a plant, grab a frame, upload it
-- [ ] Build one Cyberwave workflow in Studio: Call-Model node with a plant
-      health prompt, wired to a VLM from the catalog
-- [ ] Trigger it manually via `workflow_trigger.py`, confirm you get back a
-      sensible plant-health read
-- [ ] Log the result (even just to a local JSON file)
+- [ ] Build one Cyberwave workflow in Studio: Call-Model node using the
+      pepper prompt in `workflows/plant_health_workflow.md`, wired to a
+      vision-capable model from the catalog. Record the workflow UUID into
+      `.env` as `CYBERWAVE_WORKFLOW_ID`.
+- [ ] Run `python scripts/test_single_capture.py` — point the camera at a
+      real pepper plant/fruit, capture a frame via `source="local"`,
+      trigger the workflow, save the result + image to `~/kdroid_data/`
+- [ ] Confirm the JSON output actually parses (status/disease_guess/
+      ripeness/confidence/notes) — iterate on the prompt in
+      `config.default_prompt` if the model isn't following the schema
+- [ ] Test against a few different real conditions: healthy leaf, a fruit
+      showing early rot/discoloration if you have one, ripe vs. unripe
+      fruit — see if the categories actually distinguish correctly
+- [ ] Note: `workflow_trigger.py` currently only returns a `run_uuid`, not
+      the model's actual text response — you'll need to check the result
+      either in the Cyberwave dashboard's workflow run history, or extend
+      `WorkflowTrigger` to poll the run status endpoint for the output.
+      This is the next real code task once the manual test proves the
+      concept works at all.
 
-**Exit criteria:** point the camera at a real plant, run one command, get a
-plant-health assessment back.
+**Exit criteria:** point the camera at a real pepper plant, run one
+command, get back a parsed healthy/diseased + ripe/unripe read, saved
+locally to the SD card.
 
 ## Phase 2 — Deterministic waypoints (days 6–9)
 

@@ -22,16 +22,34 @@ reproducible and reviewable, and records the workflow ID once created.
    backend so results land in the farmer-facing view instead of (or in
    addition to) Cyberwave's default delivery.
 
-## Suggested prompt (starting point, iterate on real leaves)
+## Prompt — pepper, structured JSON (v1 target crop)
 
-> Assess this plant's health. Note any visible signs of disease, pest
-> damage, wilting, discoloration, or nutrient deficiency. If the plant
-> looks healthy, say so plainly. Keep the assessment to 2–3 sentences.
+Ask for structured JSON, not free text — makes downstream parsing (local
+storage, dashboard, fusion with sensor data) trivial instead of needing to
+regex a paragraph.
 
-Tune this against your actual target crop (cassava/maize per your local
-context) — a generic prompt will be less accurate than one that mentions
-the crop and common local disease signs (e.g. cassava mosaic, cassava
-bacterial blight) once you've validated the general pipeline works.
+> You are inspecting a pepper plant/fruit for a farmer. Respond with ONLY
+> a JSON object, no other text, matching this schema:
+> `{"status": "healthy" | "diseased", "disease_guess": string or null (name
+> the most likely disease/pest if status is diseased, else null),
+> "ripeness": "ripe" | "unripe" | "not_applicable" (use not_applicable if
+> no fruit is visible, only leaves/stem), "confidence": "high" | "medium" |
+> "low", "notes": short plain-language explanation, 1 sentence max}`
+
+This matches `config.default_prompt` in `src/kdroid/config.py` — keep them
+in sync if you tune the wording.
+
+**Validate against real pepper disease signs once the basic pipeline
+works** — common ones worth mentioning explicitly in a v2 prompt if the
+generic version isn't specific enough: bacterial spot, anthracnose,
+Cercospora leaf spot, blossom end rot, pepper mosaic virus. Adding named
+diseases to the prompt tends to improve VLM accuracy over a fully generic
+"any disease" ask.
+
+**Parsing note:** VLMs don't always perfectly honor "JSON only" — build in
+a fallback for when the response has extra text wrapped around the JSON
+(strip to the outermost `{...}` before parsing) or fails to parse at all
+(store status as `"unknown"` rather than crashing the scouting loop).
 
 ## Once built
 
