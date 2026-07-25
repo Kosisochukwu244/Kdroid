@@ -58,15 +58,8 @@ def main():
     result = trigger.trigger(frame_bytes)
     print(f"Workflow run: {result.run_uuid}")
 
-    # TODO: once workflow_trigger.py can retrieve the actual model output
-    # (currently it only returns a run_uuid — see the TODO there about
-    # polling the run status), replace this placeholder with the real
-    # response text before parsing.
-    raw_response = input(
-        "Paste the model's raw text response here (temporary manual step "
-        "until run-status polling is wired up): "
-    )
-    parsed = parse_vlm_response(raw_response)
+
+    parsed = parse_vlm_response(result.raw_response)
 
     capture_id = store.new_capture_id()
     saved_image_path = store.save_image(capture_id, frame_path)
